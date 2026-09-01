@@ -43,6 +43,19 @@ this repo can stay public and the pages can be hosted anywhere static.
 Set your Paystack payment page's success/redirect URL to wherever you host
 `thank-you.html`.
 
+### On the bot handle
+
+The sales page deliberately never names the bot, so nobody browsing the pitch
+goes looking for it directly. `thank-you.html` has to name it — that is the
+page that builds the link — and it must be publicly reachable for Paystack to
+redirect to it, so the handle is discoverable to anyone who looks.
+
+That is fine, because the handle was never the lock. Telegram bot usernames are
+searchable, and every paying subscriber knows it anyway. The actual gate is on
+`/start`: with no valid Paystack reference it refuses and shows the pay link,
+whoever is asking. Keeping the name off the sales page reduces idle curiosity;
+the paywall is what stops freeloading.
+
 ## Hosting
 
 Any static host. For GitHub Pages: Settings → Pages → deploy from `master`,
