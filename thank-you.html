@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>You're in — GigScout</title>
+
+<!--
+  The hand-off page. Paystack redirects here after a successful payment and
+  appends ?reference=... (and trxref, the same value under an older name).
+
+  All this page does is turn that reference into a Telegram deep link:
+      https://t.me/<bot>?start=<reference>
+  Tapping it makes Telegram send "/start <reference>" to the bot on the
+  customer's behalf, and the bot checks the reference against Paystack before
+  unlocking anything. So there is no secret here and nothing to protect — the
+  reference is only useful to whoever already paid, and the verification is
+  what makes it access, not the URL.
+
+  SET THIS: your bot username, without the @.
+-->
+<script>window.GIGSCOUT_BOT = 'FreelancegighubBot';</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --ink:#070A0D; --surface:#121A21; --line:#22303B;
+  --bone:#EEF4F7; --ash:#8FA0AD; --ash-dim:#63737F;
+  --ember:#FF5A1F; --lime:#B8FF3C;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;background:var(--ink);color:var(--bone);
+  font-family:var(--f-body);font-size:17px;line-height:1.6;
+  display:flex;align-items:center;justify-content:center;padding:32px 20px;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(760px 520px at 70% -10%, rgba(255,90,31,.18), transparent 62%),
+    radial-gradient(700px 520px at 10% 110%, rgba(184,255,60,.09), transparent 60%);
+}
+.card{
+  position:relative;width:100%;max-width:560px;
+  background:linear-gradient(165deg,rgba(24,34,43,.9),rgba(13,19,25,.9));
+  border:1px solid var(--line);border-radius:20px;padding:44px 38px;
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.9);
+}
+@media(max-width:520px){.card{padding:32px 24px}}
+
+.tick{
+  width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:rgba(184,255,60,.1);border:1px solid rgba(184,255,60,.35);
+  color:var(--lime);font-size:1.5rem;margin-bottom:24px;
+}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(1.8rem,5.5vw,2.5rem);
+  letter-spacing:-.03em;line-height:1.06;margin:0 0 14px}
+p{margin:0 0 1em;color:#C2CFD8}
+.dim{color:var(--ash);font-size:.95rem}
+
+.ref{
+  font-family:var(--f-mono);font-size:.78rem;color:var(--ash-dim);
+  background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;
+  padding:10px 13px;margin:20px 0 26px;word-break:break-all;
+}
+.ref b{color:var(--lime);font-weight:500}
+
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:11px;width:100%;
+  font-family:var(--f-display);font-weight:600;font-size:1.06rem;
+  padding:18px 26px;border-radius:12px;text-decoration:none;border:none;cursor:pointer;
+  background:linear-gradient(180deg,var(--ember),#E2440F);color:#fff;
+  box-shadow:0 14px 34px -12px rgba(255,90,31,.75);
+  transition:transform .16s ease,box-shadow .16s ease;
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 20px 44px -12px rgba(255,90,31,.9)}
+.btn:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
+
+ol{margin:28px 0 0;padding:0 0 0 20px;color:var(--ash);font-size:.94rem}
+ol li{margin-bottom:9px}
+ol li::marker{color:var(--ember);font-family:var(--f-mono);font-size:.85rem}
+ol b{color:#fff;font-weight:500}
+
+.warn{
+  border:1px solid rgba(255,90,31,.35);background:rgba(255,90,31,.06);
+  border-radius:12px;padding:18px 20px;margin-bottom:24px;font-size:.95rem;
+}
+.warn b{color:var(--ember)}
+[hidden]{display:none!important}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="card">
+  <!-- shown when a reference is present -->
+  <div id="ok" hidden>
+    <div class="tick">&check;</div>
+    <h1>Payment received. One tap left.</h1>
+    <p>Your subscription is live. The button below opens the GigScout bot in Telegram
+       and hands it your payment automatically — you don't have to type anything.</p>
+
+    <div class="ref">Your reference: <b id="refOut"></b></div>
+
+    <a class="btn" id="go" href="#" rel="noopener">Open GigScout in Telegram &rarr;</a>
+
+    <ol>
+      <li>Telegram opens on the bot. Tap <b>Start</b> if it asks.</li>
+      <li>It confirms your payment and asks <b>four short questions</b> — your field,
+          your country, gigs or jobs, and your keywords.</li>
+      <li>That's it. Alerts begin on the next scan.</li>
+    </ol>
+
+    <p class="dim" style="margin-top:26px">
+      Don't have Telegram yet? Install it free, then come back to this page and tap the button again.
+      Bookmark this page until you have — the link only works from here.
+    </p>
+  </div>
+
+  <!-- shown when someone lands here without a reference -->
+  <div id="missing" hidden>
+    <h1>Something's missing.</h1>
+    <div class="warn">
+      <b>No payment reference in this link.</b> That usually means you opened this page
+      directly instead of arriving from the Paystack checkout.
+    </div>
+    <p>If you have already paid, find the Paystack receipt in your email — it carries your
+       transaction reference. Open the bot and send it like this:</p>
+    <div class="ref">/start <b>YOUR-REFERENCE</b></div>
+    <a class="btn" id="goPlain" href="#" rel="noopener">Open GigScout in Telegram &rarr;</a>
+    <p class="dim" style="margin-top:24px">If you have not paid yet, head back to the sales page and subscribe first.</p>
+  </div>
+</main>
+
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  // Paystack sends both; trxref is the older name for the same value.
+  var reference = (params.get('reference') || params.get('trxref') || '').trim();
+  var bot = (window.GIGSCOUT_BOT || '').replace(/^@/, '');
+
+  var plain = 'https://t.me/' + encodeURIComponent(bot);
+
+  // Telegram start payloads accept only A-Za-z0-9_- and top out at 64 chars.
+  // Paystack's own references fit; anything that does not is not a reference,
+  // and sending it would produce a confusing error inside Telegram instead of
+  // a clear one here.
+  if (reference && /^[\w-]{4,64}$/.test(reference)) {
+    document.getElementById('refOut').textContent = reference;
+    document.getElementById('go').href = plain + '?start=' + encodeURIComponent(reference);
+    document.getElementById('ok').hidden = false;
+  } else {
+    document.getElementById('goPlain').href = plain;
+    document.getElementById('missing').hidden = false;
+  }
+})();
+</script>
+</body>
+</html>
