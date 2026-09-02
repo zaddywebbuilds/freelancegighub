@@ -19,6 +19,15 @@
 -->
 <script>window.GIGSCOUT_CHECKOUT = '';</script>
 
+<!--
+  SET THIS to where the bot's signup feed is reachable, e.g.
+  'https://api.gigscout.ng'. The page then shows real recent signups in the
+  activity popup instead of recent alerts. The bot serves it only when
+  WEB_PORT is set, and this page's origin must be in WEB_ALLOW_ORIGIN.
+  Leave it empty and the popup falls back to the real alert feed below.
+-->
+<script>window.GIGSCOUT_API = '';</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
@@ -455,6 +464,20 @@ em{color:var(--gold-deep);font-style:italic;font-weight:500}
 }
 .step h3{margin-bottom:6px;font-size:1.05rem}
 .step p{margin:0;font-size:.93rem;color:var(--ink-2);line-height:1.55}
+/* Each step carries the screen it describes. Cropped to the top, which is
+   where the thing being described actually is on every one of them. */
+@media(min-width:880px){
+  .step{grid-template-columns:auto 1fr 208px;gap:22px;align-items:center}
+}
+.step-shot{
+  border-radius:12px;overflow:hidden;border:1px solid var(--line);
+  box-shadow:var(--shadow);background:#17212B;height:142px;
+}
+.step-shot img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+@media(max-width:879px){
+  .step{grid-template-columns:auto 1fr}
+  .step-shot{grid-column:1 / -1;height:172px;margin-top:4px}
+}
 
 /* ═══════════ price ═══════════ */
 .price-card{
@@ -1046,30 +1069,35 @@ footer{padding:32px 0 120px;text-align:center;font-family:var(--f-mono);font-siz
           <h3>You pay with your card</h3>
           <p>Normal Nigerian debit card, on a secure Paystack page. Takes about a minute.</p>
         </div>
+        <div class="step-shot"><img src="assets/step-1-pay.png" alt="Card payment screen showing 5,000 naira due, card number, expiry and CVV fields, secured by Paystack"></div>
       </div>
       <div class="step" style="--d:.18s">
         <div>
           <h3>You land on a confirmation page straight away</h3>
           <p>The second the payment clears, Paystack sends you to it. Nobody has to approve you by hand.</p>
         </div>
+        <div class="step-shot"><img src="assets/step-2-confirm.png" alt="Confirmation page reading Payment received, one tap left, with an Open Telegram button"></div>
       </div>
       <div class="step" style="--d:.31s">
         <div>
           <h3>One tap opens Telegram</h3>
           <p>Tap the button on that page. It opens the right chat and hands over your payment for you. Nothing to copy, nothing to type. Your account unlocks on the spot.</p>
         </div>
+        <div class="step-shot"><img src="assets/step-3-telegram.png" alt="Telegram chat with the GigScout bot showing payment confirmed and the first onboarding question"></div>
       </div>
       <div class="step" style="--d:.44s">
         <div>
           <h3>You answer four short questions</h3>
           <p>What you do, what country you're in, whether you want gigs or jobs or both, and which words matter to you. Takes about two minutes.</p>
         </div>
+        <div class="step-shot"><img src="assets/step-4-questions.png" alt="Telegram chat showing the onboarding questions and the search terms the bot worked out"></div>
       </div>
       <div class="step" style="--d:.57s">
         <div>
           <h3>The alerts start</h3>
           <p>From that point your phone buzzes whenever someone posts something worth your time. Your subscription renews automatically each month, and stopping it stops the alerts. Nothing else to cancel.</p>
         </div>
+        <div class="step-shot"><img src="assets/alert-tech-video-editor.png" alt="A real GigScout alert arriving in Telegram, a freelance tech video editor role scored 96 out of 100"></div>
       </div>
     </div>
     <p class="cta-note" data-rise style="margin-top:22px;line-height:1.9">
@@ -1263,10 +1291,17 @@ footer{padding:32px 0 120px;text-align:center;font-family:var(--f-mono);font-siz
     onPay = e[0].isIntersecting; syncBar();
   }, { threshold: 0.2 }).observe(pay);
 
-  // Live activity popup. These are the real alerts shown elsewhere on this
-  // page, with the timestamps they actually carried, rotating so the page
-  // feels as live as the product is. Nothing here is invented.
-  var FEED = [
+  // Live activity popup.
+  //
+  // First choice is real signups from the bot, if GIGSCOUT_API is configured.
+  // Failing that it falls back to the alerts shown elsewhere on this page,
+  // with the timestamps they actually carried. Both are true; neither is a
+  // script of invented names, which is the whole point.
+  var pop = document.getElementById('pop');
+  var popT = document.getElementById('pop-t');
+  var popS = document.getElementById('pop-s');
+
+  var FALLBACK = [
     ['Freelance Tech Video Editor at Canvas Media', 'Alert sent 18 minutes ago · 96/100'],
     ['Social Media Manager, Minnesota Wild', 'Alert sent 1 hour ago · 97/100'],
     ['Food writer for SavorNation, BestReviews', 'Alert sent 29 minutes ago · 98/100'],
@@ -1278,22 +1313,71 @@ footer{padding:32px 0 120px;text-align:center;font-family:var(--f-mono);font-siz
     ['Senior Fund Accountant, Private Equity', 'Alert sent 5 hours ago · 91/100'],
     ['Web Consultant, Business Toolkit®', 'Alert sent 3 hours ago · 96/100']
   ];
-  var pop = document.getElementById('pop');
-  var popT = document.getElementById('pop-t');
-  var popS = document.getElementById('pop-s');
-  var i = 0;
-  var cycle = function () {
-    var item = FEED[i % FEED.length];
-    i++;
-    popT.textContent = item[0];
-    popS.textContent = item[1];
-    pop.classList.add('show');
-    setTimeout(function () {
-      pop.classList.remove('show');
-      setTimeout(cycle, 6500);
-    }, 5200);
+
+  // SQLite hands back "YYYY-MM-DD HH:MM:SS" in UTC with no zone marker, which
+  // Safari refuses to parse and Chrome reads as local time. Normalise it.
+  var parseUtc = function (stamp) {
+    var t = Date.parse(String(stamp).replace(' ', 'T') + 'Z');
+    return Number.isNaN(t) ? null : t;
   };
-  setTimeout(cycle, 4200);
+
+  var ago = function (stamp) {
+    var t = parseUtc(stamp);
+    if (t === null) return 'recently';
+    var mins = Math.round((Date.now() - t) / 60000);
+    if (mins < 2) return 'just now';
+    if (mins < 60) return mins + ' minutes ago';
+    var hrs = Math.round(mins / 60);
+    if (hrs < 24) return hrs === 1 ? 'an hour ago' : hrs + ' hours ago';
+    var days = Math.round(hrs / 24);
+    return days === 1 ? 'yesterday' : days + ' days ago';
+  };
+
+  var start = function (feed) {
+    var i = 0;
+    var cycle = function () {
+      var item = feed[i % feed.length];
+      i++;
+      popT.textContent = item[0];
+      popS.textContent = item[1];
+      pop.classList.add('show');
+      setTimeout(function () {
+        pop.classList.remove('show');
+        setTimeout(cycle, 6500);
+      }, 5200);
+    };
+    setTimeout(cycle, 4200);
+  };
+
+  var api = (window.GIGSCOUT_API || '').trim().replace(/\/$/, '');
+  if (!api) {
+    start(FALLBACK);
+  } else {
+    // A slow or dead endpoint must not leave the popup empty, so the fallback
+    // runs on any failure and on a timeout.
+    var settled = false;
+    var use = function (feed) {
+      if (settled) return;
+      settled = true;
+      start(feed);
+    };
+    setTimeout(function () { use(FALLBACK); }, 4000);
+
+    fetch(api + '/api/signups', { mode: 'cors', credentials: 'omit' })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function (data) {
+        var rows = (data && data.signups) || [];
+        if (rows.length === 0) return use(FALLBACK);
+        use(rows.map(function (s) {
+          var where = s.country ? ' in ' + s.country : '';
+          return [
+            'Someone doing ' + s.trade + where + ' just joined',
+            'Subscribed ' + ago(s.joinedAt)
+          ];
+        }));
+      })
+      .catch(function () { use(FALLBACK); });
+  }
 })();
 </script>
 
