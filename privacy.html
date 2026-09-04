@@ -98,6 +98,7 @@ footer{margin-top:52px;padding-top:22px;border-top:1px solid var(--line);font-si
     <li><strong>Paystack</strong> — processes your payment. Paystack's privacy policy governs the payment data they handle. We only receive a transaction reference, the amount, and the payment timestamp.</li>
     <li><strong>Apify</strong> — scrapes LinkedIn and X for posts. No subscriber data is shared with Apify. Only the search keywords are used as scraping queries.</li>
     <li><strong>OpenAI</strong> — the AI model that scores and summarises posts before they reach you. Posts are sent as plain text with no subscriber identifiers attached.</li>
+    <li><strong>Meta and TikTok</strong> — advertising pixels on this website only. They see that a browser visited a page; they never receive anything from the bot or your subscriber record. See section 6.</li>
   </ul>
 
   <h2>4. Data retention</h2>
@@ -113,7 +114,14 @@ footer{margin-top:52px;padding-top:22px;border-top:1px solid var(--line);font-si
   <p>To exercise these rights, message us on WhatsApp at <a href="https://wa.me/13018926590" target="_blank" rel="noopener">+1 301 892 6590</a> or send <code>/help</code> in the GigScout Telegram chat.</p>
 
   <h2>6. Cookies and tracking</h2>
-  <p>The sales page (gigscout.online) does not use cookies or tracking pixels. If you have purchased a subscription, the Paystack checkout page is governed by Paystack's own cookie policy.</p>
+  <p>The sales page (gigscout.online) uses advertising pixels so we can measure whether our ads reach people who actually want this product. These run on every page of this site:</p>
+  <ul>
+    <li><strong>Meta Pixel</strong> (Facebook and Instagram ads) — records that a browser visited the page, and whether it reached the confirmation page after subscribing. Meta's own privacy policy governs what Meta does with that signal.</li>
+    <li><strong>TikTok Pixel</strong> (TikTok ads) — the same, for ads shown on TikTok. TikTok's own privacy policy governs their side.</li>
+  </ul>
+  <p>Both set cookies in your browser and share a page-visit event with the platform that placed the ad. Neither one receives your name, email address or payment details, because this site never collects them — see section 1. They tell us how many people arrived and how many subscribed, not who you are.</p>
+  <p>You can block them with any standard ad or tracking blocker, or through your browser's privacy settings. Blocking them does not affect the product: subscribing, the Telegram bot and your alerts all work exactly the same either way.</p>
+  <p>If you have purchased a subscription, the Paystack checkout page is governed by Paystack's own cookie policy.</p>
 
   <h2>7. Security</h2>
   <p>Subscriber records are stored in a SQLite database on a private server. The server is not publicly accessible. Payment verification uses Paystack's HTTPS API. We never store or log raw payment credentials.</p>
