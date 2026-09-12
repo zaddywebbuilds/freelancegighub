@@ -33,6 +33,14 @@ fbq('track', 'Lead');
 src="https://www.facebook.com/tr?id=1108248042070930&ev=PageView&noscript=1"
 /></noscript>
 <!-- End Meta Pixel Code -->
+<!-- X (Twitter) Pixel Code -->
+<script>
+!function(e,t,n,s,u,a){e.twq||(s=e.twq=function(){s.exe?s.exe.apply(s,arguments):s.queue.push(arguments);
+},s.version='1.1',s.queue=[],u=t.createElement(n),u.async=!0,u.src='https://static.ads-twitter.com/uwt.js',
+a=t.getElementsByTagName(n)[0],a.parentNode.insertBefore(u,a))}(window,document,'script');
+twq('config','rf85c');
+</script>
+<!-- End X Pixel Code -->
 <meta name="robots" content="noindex">
 <title>You're in — GigScout</title>
 
@@ -187,6 +195,23 @@ ol b{color:#fff;font-weight:500}
     document.getElementById('refOut').textContent = reference;
     document.getElementById('go').href = plain + '?start=' + encodeURIComponent(reference);
     document.getElementById('ok').hidden = false;
+
+    /**
+     * X conversion, reported only when a real payment reference is present.
+     *
+     * This page is reachable without one — somebody bookmarks it, or opens it
+     * out of curiosity — and counting those as conversions teaches X's
+     * optimiser to buy the wrong traffic. The Meta and TikTok tags above fire
+     * on every load of this page and do over-count for exactly that reason.
+     *
+     * The Paystack reference doubles as the deduplication id, so a refresh or
+     * a back-button return reports the same conversion rather than a second
+     * one. No value is sent: the amount actually charged varies with promos
+     * and is not known to this page, and a wrong value is worse than none.
+     */
+    if (typeof twq === 'function') {
+      twq('event', 'tw-rf85c-rf85e', { conversion_id: reference });
+    }
   } else {
     document.getElementById('goPlain').href = plain;
     document.getElementById('missing').hidden = false;
