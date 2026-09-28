@@ -56,6 +56,25 @@ twq('config','rf85c');
 <script>window.GIGSCOUT_CHECKOUT = 'https://paystack.com/pay/nkloecsl55';</script>
 
 <!--
+  PROMO CODES. Paystack's own discount codes do not work on Payment Pages,
+  so the discount is applied here: entering a code swaps every buy button to
+  a second Paystack page whose price is fixed at the discounted amount.
+
+  That amount is also the attribution. Every payment at the campaign price
+  came from that campaign, with nothing for the buyer to type at Paystack and
+  nothing to reconcile afterwards -- the bot accepts both prices and unlocks
+  30 days either way.
+
+  Create the discounted Payment Page in Paystack (Dashboard > Payment Pages,
+  fixed amount), then paste its link as `url` below.
+-->
+<script>
+window.GIGSCOUT_PROMOS = {
+  PATOGIDI: { price: 9000, label: '₦9,000', url: 'https://paystack.com/pay/1v2qfqkwsp' }
+};
+</script>
+
+<!--
   SET THIS to where the bot's signup feed is reachable, e.g.
   'https://api.gigscout.ng'. The page then shows real recent signups in the
   activity popup instead of recent alerts. The bot serves it only when
@@ -639,7 +658,7 @@ footer{padding:32px 0 120px;text-align:center;font-family:var(--f-mono);font-siz
         with the name, the link, and what to say first.</strong>
       </p>
       <div class="cta-row" data-rise style="--d:.28s">
-        <a class="btn btn-gold" href="#pay">Get the alerts · ₦10,000</a>
+        <a class="btn btn-gold" href="#pay">Get the alerts · <span data-price>₦10,000</span></a>
         <a class="btn btn-ghost" href="#proof">See real alerts first</a>
       </div>
       <p class="cta-note" data-rise style="--d:.34s;margin-top:14px">Card, transfer or USSD · Access in minutes</p>
@@ -1118,7 +1137,7 @@ footer{padding:32px 0 120px;text-align:center;font-family:var(--f-mono);font-siz
   <div class="narrow">
     <p class="eyebrow" data-rise>The price</p>
     <div class="price-card" data-zoom>
-      <div class="price-n">₦10,000<small>/30 days</small></div>
+      <div class="price-n"><span data-price>₦10,000</span><small>/30 days</small></div>
       <ul class="price-list">
         <li>Unlimited alerts from LinkedIn and X, all day, every day</li>
         <li>Pay by card, bank transfer or USSD, whichever suits you</li>
@@ -1129,6 +1148,18 @@ footer{padding:32px 0 120px;text-align:center;font-family:var(--f-mono);font-siz
         <li>Change your field or terms any time, in one message</li>
         <li>Pay again only when you want another 30 days.</li>
       </ul>
+      <div class="promo" style="margin:18px 0 6px;text-align:left">
+        <label for="promo-code" style="display:block;font-size:13px;opacity:.75;margin-bottom:6px">Have a promo code?</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="promo-code" type="text" autocomplete="off" spellcheck="false"
+                 placeholder="Enter code"
+                 style="flex:1 1 160px;min-width:0;padding:11px 13px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:inherit;font:inherit;text-transform:uppercase">
+          <button id="promo-apply" type="button"
+                  style="padding:11px 18px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:inherit;font:inherit;cursor:pointer">Apply</button>
+        </div>
+        <p id="promo-msg" role="status" aria-live="polite" style="margin:8px 0 0;font-size:13px;min-height:1.2em"></p>
+      </div>
+
       <div class="compare">
         <b>₦10,000</b> is roughly what <b>80 Connects</b> costs you.<br>
         80 Connects is <b>five or six proposals</b> into a 50-person queue.<br>
@@ -1241,7 +1272,7 @@ footer{padding:32px 0 120px;text-align:center;font-family:var(--f-mono);font-siz
       <strong>The only thing being decided right now is whether it's you.</strong>
     </p>
     <div class="cta-row" data-rise style="--d:.2s">
-      <a class="btn btn-gold" href="#pay">Get the alerts · ₦10,000</a>
+      <a class="btn btn-gold" href="#pay">Get the alerts · <span data-price>₦10,000</span></a>
     </div>
     <p class="cta-note" data-rise style="--d:.26s;margin-top:15px;color:#A8977A">Instant access · Starts in minutes</p>
   </div>
@@ -1282,7 +1313,7 @@ footer{padding:32px 0 120px;text-align:center;font-family:var(--f-mono);font-siz
 <!-- sticky buy bar -->
 <div class="buybar" id="buybar">
   <span class="buybar-tx">
-    <span class="buybar-t">₦10,000 · 30 days</span><br>
+    <span class="buybar-t"><span data-price>₦10,000</span> · 30 days</span><br>
     <span class="buybar-s">30 days · Instant access</span>
   </span>
   <a class="btn btn-gold" href="#pay">Get the alerts</a>
@@ -1297,12 +1328,72 @@ footer{padding:32px 0 120px;text-align:center;font-family:var(--f-mono);font-siz
   // Point every checkout button at the one configured link. Until it is set,
   // they keep scrolling to the price card rather than going nowhere.
   var checkout = (window.GIGSCOUT_CHECKOUT || '').trim();
-  if (checkout) {
-    document.querySelectorAll('[data-checkout], a[href="#pay"]').forEach(function (a) {
-      a.href = checkout;
+  var fullLabel = '₦10,000';
+
+  function pointButtonsAt(url) {
+    if (!url) return;
+    document.querySelectorAll('[data-checkout], a[href="#pay"], a[href^="https://paystack.com/pay/"]').forEach(function (a) {
+      a.href = url;
       a.rel = 'noopener';
     });
   }
+
+  function showPrice(label) {
+    document.querySelectorAll('[data-price]').forEach(function (el) { el.textContent = label; });
+  }
+
+  pointButtonsAt(checkout);
+
+  /* ---- promo codes ----
+     Applied here rather than at Paystack, whose discount codes do not work on
+     Payment Pages. A valid code swaps every buy button to a second payment
+     page fixed at the lower amount, so the buyer types nothing at checkout and
+     the amount itself records which campaign the sale came from. */
+  (function () {
+    var promos = window.GIGSCOUT_PROMOS || {};
+    var input = document.getElementById('promo-code');
+    var apply = document.getElementById('promo-apply');
+    var msg = document.getElementById('promo-msg');
+    if (!input || !apply || !msg) return;
+
+    function applyCode(raw, quiet) {
+      var code = String(raw || '').trim().toUpperCase();
+      if (!code) { msg.textContent = ''; return false; }
+      var promo = promos[code];
+      if (!promo) {
+        msg.style.color = '#ff9b9b';
+        msg.textContent = "That code isn't valid.";
+        return false;
+      }
+      if (!promo.url) {
+        // The code is real but its payment page has not been set yet. Say so
+        // plainly rather than sending somebody to the full price silently.
+        msg.style.color = '#ffcf8b';
+        msg.textContent = 'That code is not ready yet — please try again shortly.';
+        return false;
+      }
+      pointButtonsAt(promo.url);
+      showPrice(promo.label);
+      msg.style.color = '#8ef0b0';
+      msg.textContent = code + ' applied — ' + promo.label + ' for 30 days.';
+      try { localStorage.setItem('gs_promo', code); } catch (e) {}
+      if (!quiet) input.value = code;
+      return true;
+    }
+
+    apply.addEventListener('click', function () { applyCode(input.value); });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); applyCode(input.value); }
+    });
+
+    // A code survives a reload, and ?promo=CODE in the URL applies it on
+    // arrival -- which is what an email link will carry.
+    var fromUrl = new URLSearchParams(location.search).get('promo');
+    var saved = null;
+    try { saved = localStorage.getItem('gs_promo'); } catch (e) {}
+    var initial = fromUrl || saved;
+    if (initial) { input.value = String(initial).toUpperCase(); applyCode(initial, true); }
+  })();
 
   var meterN = document.getElementById('mn');
   var meterFill = document.getElementById('mf');
