@@ -43,8 +43,15 @@ twq('config','rf85c');
 <meta property="og:title" content="GigScout, stop paying to beg for work that's already gone">
 <meta property="og:description" content="People post that they're hiring. GigScout reads those posts and puts the real ones on your phone, with the name, the link, and what to say first.">
 <meta property="og:type" content="website">
-<meta property="og:image" content="assets/alert-video-editors.png">
+<meta property="og:url" content="https://gigscout.online/">
+<meta property="og:site_name" content="GigScout">
+<meta property="og:image" content="https://gigscout.online/assets/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="GigScout, stop paying to beg for work that's already gone">
+<meta name="twitter:description" content="People post that they're hiring. GigScout reads those posts and puts the real ones on your phone, with the name, the link, and what to say first.">
+<meta name="twitter:image" content="https://gigscout.online/assets/og-card.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>%F0%9F%94%A5</text></svg>">
 <title>GigScout, real hiring posts on your phone</title>
 
@@ -54,6 +61,8 @@ twq('config','rf85c');
   thank-you.html. Every "buy" button on this page reads from it.
 -->
 <script>window.GIGSCOUT_CHECKOUT = 'https://paystack.com/pay/nkloecsl55';</script>
+<!-- International USD checkout. Leave empty until the Paystack USD page is created. -->
+<script>window.GIGSCOUT_INTERNATIONAL_CHECKOUT = '';</script>
 
 <!--
   PROMO CODES. Paystack's own discount codes do not work on Payment Pages,
@@ -1140,7 +1149,8 @@ footer{padding:32px 0 120px;text-align:center;font-family:var(--f-mono);font-siz
       <div class="price-n"><span data-price>₦10,000</span><small>/30 days</small></div>
       <ul class="price-list">
         <li>Unlimited alerts from LinkedIn and X, all day, every day</li>
-        <li>Pay by card, bank transfer or USSD, whichever suits you</li>
+        <li data-ngn-only>Pay by card, bank transfer or USSD, whichever suits you</li>
+        <li data-intl-only style="display:none">Pay by card — secure Paystack USD checkout</li>
         <li>Filtered to your exact field and your country</li>
         <li>Confidence score and opening angle on every single alert</li>
         <li>Direct link to the post. No middleman, no commission, no Connects</li>
@@ -1160,15 +1170,20 @@ footer{padding:32px 0 120px;text-align:center;font-family:var(--f-mono);font-siz
         <p id="promo-msg" role="status" aria-live="polite" style="margin:8px 0 0;font-size:13px;min-height:1.2em"></p>
       </div>
 
-      <div class="compare">
+      <div class="compare" data-ngn-only>
         <b>₦10,000</b> is roughly what <b>80 Connects</b> costs you.<br>
         80 Connects is <b>five or six proposals</b> into a 50-person queue.<br>
         One reply from one alert pays for the whole year.
       </div>
+      <div class="compare" data-intl-only style="display:none">
+        <b>$10/month</b> — less than one failed proposal on most platforms.<br>
+        One alert, one reply, one client. That pays for the year.
+      </div>
       <div class="cta-row">
         <a class="btn btn-gold" href="#pay" data-checkout>Start getting alerts today</a>
       </div>
-      <p class="cta-note" style="margin-top:14px">Card, bank transfer or USSD · Instant access</p>
+      <p class="cta-note" style="margin-top:14px" data-ngn-only>Card, bank transfer or USSD · Instant access</p>
+      <p class="cta-note" style="margin-top:14px;display:none" data-intl-only>Card payment · Instant access</p>
     </div>
   </div>
 </section>
@@ -1343,6 +1358,31 @@ footer{padding:32px 0 120px;text-align:center;font-family:var(--f-mono);font-siz
   }
 
   pointButtonsAt(checkout);
+
+  /* ---- international pricing ----
+     ipapi.co returns the 2-letter country code as plain text. The call is
+     async so the page is never blocked waiting for it; if it times out or
+     fails the NGN default stays in place. The URL swap is idempotent, so
+     running it after a promo is already applied just overwrites the promo —
+     but geo runs first and promos run after, so the order is safe. */
+  (function () {
+    var intlUrl = (window.GIGSCOUT_INTERNATIONAL_CHECKOUT || '').trim();
+    if (!intlUrl) return; // not configured yet — stay on NGN
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var tid = setTimeout(function () { if (ctrl) try { ctrl.abort(); } catch (e) {} }, 4000);
+    fetch('https://ipapi.co/country/', ctrl ? { signal: ctrl.signal } : {})
+      .then(function (r) { return r.text(); })
+      .then(function (cc) {
+        clearTimeout(tid);
+        if ((cc || '').trim().toUpperCase() === 'NG') return; // Nigerian — keep NGN
+        pointButtonsAt(intlUrl);
+        showPrice('$10');
+        // Swap NGN-specific copy for international copy
+        document.querySelectorAll('[data-ngn-only]').forEach(function (el) { el.style.display = 'none'; });
+        document.querySelectorAll('[data-intl-only]').forEach(function (el) { el.style.removeProperty('display'); });
+      })
+      .catch(function () { clearTimeout(tid); }); // geo failed — NGN default stays
+  })();
 
   /* ---- promo codes ----
      Applied here rather than at Paystack, whose discount codes do not work on
