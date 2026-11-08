@@ -193,8 +193,14 @@ ol b{color:#fff;font-weight:500}
   // a clear one here.
   if (reference && /^[\w-]{4,64}$/.test(reference)) {
     document.getElementById('refOut').textContent = reference;
-    document.getElementById('go').href = plain + '?start=' + encodeURIComponent(reference);
+    var deepLink = plain + '?start=' + encodeURIComponent(reference);
+    document.getElementById('go').href = deepLink;
     document.getElementById('ok').hidden = false;
+
+    // Auto-open Telegram after a beat so the user sees the confirmation first.
+    // window.location.href avoids popup-blocker treatment; the button stays as
+    // a fallback for browsers that block the navigation.
+    setTimeout(function () { window.location.href = deepLink; }, 1500);
 
     /**
      * X conversion, reported only when a real payment reference is present.
